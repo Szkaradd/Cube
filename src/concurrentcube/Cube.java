@@ -40,7 +40,7 @@ public class Cube {
     private int how_many_entered = 0;
 
     // Zmienna przechowująca informacje o obecnie pracującej grupie procesów.
-    // -1 jeśli nie pracuje żadna grupa.
+    // -1, jeśli nie pracuje żadna grupa.
     private int working_axis = -1;
 
     // Zmienna przechowująca ilość procesów, które w danej chwili pracują
@@ -106,7 +106,7 @@ public class Cube {
         }
     }
 
-    // Funkcja licząca kwadraty w każdym kolorze, zwraca true,
+    // Funkcja licząca kwadraty w każdym kolorze zwraca true,
     // jeśli ilość kwadratów w każdym kolorze wynosi rozmiar_kostki^2. Wpp. false.
     public boolean correctCountOfNumbers() {
         int[] result = new int[NUMBER_OF_SIDES];
@@ -268,7 +268,7 @@ public class Cube {
             working_processes++;
             // Wpuszczamy pozostałe procesy z naszej grupy kaskadowo.
             // My wpuszczamy 1 proces, on wpuszcza kolejny itd.
-            // , aż któryś z warunków będzie fałszywy.
+            //, aż któryś z warunków będzie fałszywy.
             if (waiting_in_group[my_axis] > 0 &&
                     (how_many_entered < MAX_WORKING_PROCESSES || waiting_groups == 0)) {
                 group[my_axis].release();

@@ -11,7 +11,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Thread.sleep;
-
 public class CubeTest {
     private static final int top = 0;
     private static final int left = 1;
@@ -79,16 +78,16 @@ public class CubeTest {
         }
     }
 
-    // Test sprawdza, czy nie zostało zachowane bezpieczeństwo.
+    // Test sprawdza, czy zostało zachowane bezpieczeństwo.
     // Wykonuje wiele losowych ruchów, na koniec sprawdza, czy
     //
     @Test
     public void SafetyTest1() throws InterruptedException {
-        Shower.setDefaultMode(Shower.COLOR | Shower.GRID);
+        // Shower.setDefaultMode(Shower.COLOR | Shower.GRID);
         AtomicInteger counter = new AtomicInteger(0);
 
         int cube_size = 10;
-        int threads_ammount = 1000;
+        int threads_amount = 1000;
         int tries = 100;
         Cube c = new Cube(cube_size,
                 (x, y) -> counter.getAndIncrement(),
@@ -99,16 +98,15 @@ public class CubeTest {
 
         for (int i = 0; i < tries; i++) {
             c.resetFields();
-            Thread[] threads = new Thread[threads_ammount];
-            for (int j = 0; j < threads_ammount; j++) {
+            Thread[] threads = new Thread[threads_amount];
+            for (int j = 0; j < threads_amount; j++) {
                 threads[j] = new Thread(new Rotator(top, random.nextInt(cube_size), c));
             }
             for (Thread t : threads) t.start();
-            for (int k = 0; k < threads_ammount; k++) threads[k].join();
+            for (int k = 0; k < threads_amount; k++) threads[k].join();
             assert c.correctCountOfNumbers();
         }
-        //System.out.println(counter.get());
-        assert counter.get() == threads_ammount * tries * 2;
+        assert counter.get() == threads_amount * tries * 2;
     }
 
     @Test
@@ -274,7 +272,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu przedniej warstwy.
     @Test
-    public void simpleRotateFront() throws InterruptedException, ExecutionException {
+    public void simpleRotateFront() throws InterruptedException {
         String expected =
                 "000" +
                 "000" +
@@ -316,7 +314,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu tylnej warstwy.
     @Test
-    public void simpleRotateBack() throws InterruptedException, ExecutionException {
+    public void simpleRotateBack() throws InterruptedException {
 
         String expected =
                 "333" +
@@ -359,7 +357,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu lewej warstwy.
     @Test
-    public void simpleRotateLeft() throws InterruptedException, ExecutionException {
+    public void simpleRotateLeft() throws InterruptedException {
 
         String expected =
                 "400" +
@@ -402,7 +400,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu prawej warstwy.
     @Test
-    public void simpleRotateRight() throws InterruptedException, ExecutionException {
+    public void simpleRotateRight() throws InterruptedException {
 
         String expected =
                 "002" +
@@ -445,7 +443,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu górnej warstwy.
     @Test
-    public void simpleRotateTop() throws InterruptedException, ExecutionException {
+    public void simpleRotateTop() throws InterruptedException {
 
         String expected =
                 "000" +
@@ -488,7 +486,7 @@ public class CubeTest {
 
     // Prosty test sprawdzający poprawność obrotu dolnej warstwy.
     @Test
-    public void simpleRotateBottom() throws InterruptedException, ExecutionException {
+    public void simpleRotateBottom() throws InterruptedException {
 
         String expected =
                 "000" +
@@ -526,5 +524,95 @@ public class CubeTest {
         );
         c.rotate(bottom, 0);
         assert(expected.equals(c.show()) && counter.value == 1 << 3);
+    }
+
+    @Test
+    public void simpleInterruptTest() throws InterruptedException {
+        int cube_size = 5;
+        int thread_count = 1000;
+        Cube c = new Cube(cube_size,
+                (x,y) -> {},
+                (x,y) -> {},
+                () -> {},
+                () -> {});
+        Thread[] threads = new Thread[thread_count];
+        for (int i = 0; i < thread_count; i++) {
+            threads[i] = new Thread(new Rotator(random.nextInt(NUMBER_OF_SIDES), random.nextInt(cube_size), c));
+        }
+        for (Thread t: threads) t.start();
+        threads[random.nextInt(thread_count)].interrupt();
+        for (Thread t: threads) t.join();
+        assert c.correctCountOfNumbers();
+    }
+
+    @Test
+    public void concurrentRotationsCorrectness() throws InterruptedException {
+        int cube_size = 5;
+        int thread_count = 3;
+        int tries = 10000;
+        String[] possible_results = new String[6]; // 3! możliwych wyników.
+        Cube c = new Cube(cube_size,
+                (x,y) -> {},
+                (x,y) -> {},
+                () -> {},
+                () -> {});
+
+        // Generujemy możliwe wyniki.
+        c.rotate(0,0);
+        c.rotate(1,0);
+        c.rotate(2,0);
+        possible_results[0] = c.show();
+        c.resetFields();
+
+        c.rotate(1,0);
+        c.rotate(0,0);
+        c.rotate(2,0);
+        possible_results[1] = c.show();
+        c.resetFields();
+
+        c.rotate(0,0);
+        c.rotate(2,0);
+        c.rotate(1,0);
+        possible_results[2] = c.show();
+        c.resetFields();
+
+        c.rotate(1,0);
+        c.rotate(2,0);
+        c.rotate(0,0);
+        possible_results[3] = c.show();
+        c.resetFields();
+
+        c.rotate(2,0);
+        c.rotate(1,0);
+        c.rotate(0,0);
+        possible_results[4] = c.show();
+        c.resetFields();
+
+        c.rotate(2,0);
+        c.rotate(0,0);
+        c.rotate(1,0);
+        possible_results[5] = c.show();
+
+        int[] counter = new int[6];
+        Shower.setDefaultMode(Shower.COLOR | Shower.GRID);
+
+        Thread[] threads = new Thread[thread_count];
+        for (int try_number = 0; try_number < tries; try_number++) {
+            c.resetFields();
+            threads[0] = new Thread(new Rotator(0, 0, c));
+            threads[1] = new Thread(new Rotator(1, 0, c));
+            threads[2] = new Thread(new Rotator(2, 0, c));
+            for (Thread t : threads) t.start();
+            for (Thread t : threads) t.join();
+            String result = c.show();
+            boolean correct = false;
+            for (int i = 0; i < 6; i++) {
+                if (Objects.equals(result, possible_results[i])) {
+                    correct = true;
+                }
+            }
+            assert correct;
+        }
+
     }
 }
